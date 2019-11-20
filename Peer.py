@@ -1,15 +1,22 @@
-import asyncio
+import socket
+import sys
 
 class Peer():
 
-    def __init__(self):
-        pass
+    def __init__(self, sock, address=None):
 
-#    async def handle_incoming_packet(self, connection):
-#        while True:
-#            packet = await self.loop.sock_recv(connection)
+        self.sock= sock
 
-#            if len(packet) == 0:
-#                break # indicates that the connection timed-out or is otherwise lost
+        self.thread = Thread(target=self.handle_incoming_packet, args=(,))
+        self.thread.start()
+
+    def handle_incoming_packet(self):
+        while True:
+            packet = self.sock.recv(4096)
+
+            if len(packet) == 0:
+                break # indicates that the connection timed-out or is otherwise lost
 
             # Handle packet here
+
+        sys.exit()

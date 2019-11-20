@@ -38,12 +38,10 @@ class DVR():
 
         me = servers[myid]
 
-        print(f'{me=}')
-
         # Establish links and create a neighbor connection table {'<id>': <sock object>...}
         # Create a node table with link costs
-        self.timed_update = TimedFunc(self.step, float(update_interval))
-        self.server = PeerServer(*me)
+        TimedFunc(self.step, float(update_interval))
+        PeerServer(*me)
 
     def update(self, server1, server2, cost):
         if cost == 'inf':

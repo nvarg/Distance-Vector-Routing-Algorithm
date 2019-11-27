@@ -10,6 +10,9 @@ class DVR():
 
     def __init__(self):
         self.server_running = False
+        self.neighbors = None
+        self.node_table = None
+
         InputController(self)
 
     def __del__(self):

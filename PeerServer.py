@@ -17,5 +17,6 @@ class PeerServer():
                 incoming_ip, incoming_port = address
 
                 # Handle incoming connection
-                print(f'incoming connection from {incoming_ip}:{incoming_port}')
+                print(f'Incoming connection from {incoming_ip}:{incoming_port}')
+                Peer(sock=conn)
 

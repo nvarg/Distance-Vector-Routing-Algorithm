@@ -9,9 +9,10 @@ class PeerServer():
 
     def handle_incoming_connection(self, host, port):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.setblocking(False)
             sock.bind((host, port))
-            sock.listen(1)
+            sock.listen(5)
             while True:
                 conn, address = sock.accept()
                 incoming_ip, incoming_port = address

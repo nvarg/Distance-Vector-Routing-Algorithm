@@ -3,7 +3,7 @@ import socket
 
 class PeerServer():
 
-    def __init__(self, host, port, peers):
+    def __init__(self, host, port):
         self.thread = Thread(target=self.handle_incoming_connection, args=(host, port))
         self.thread.start()
 

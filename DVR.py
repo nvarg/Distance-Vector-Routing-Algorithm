@@ -68,17 +68,26 @@ class DVR():
     def display(self):
         '''Display the current routing table formatted as a sequence
         of lines, with each line indicating: <source-server-ID> <next-hop-server-ID> <cost-of-path>'''
+        
         pass
 
     def disable(self, server):
         '''Closes the connection with the given server id'''
-        pass
+        if server not in self.neighbors:
+            print(f'disable: server number {server} is not in neighbor list')
+            return
+        self.neighbors[server].sock.close()
+        del self.neighbors[server];
+        self.node_table[myid][server] = math.inf
+        print('disable: SUCCESS')
 
     def crash(self):
         '''Closes all server connections. The neighboring servers must
         handle this close correctly and set the link cost to infinity.'''
-        pass
+        for id, p in self.neighbors.items():
+            disable(self, id)
+        print('Crash: SUCCESS')
+
 
 if __name__ == "__main__":
     DVR()
-

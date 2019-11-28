@@ -27,28 +27,31 @@ class DVR():
             num_servers = int(f.readline())
             num_neighbors = int(f.readline())
 
-            servers = dict.fromkeys(range(1, num_servers+1))
+            servers = dict.fromkeys([str(i) for i in range(1, num_servers+1)])
             neighbors = dict()
 
             for i in range(0, num_servers):
                 line = f.readline()
-                id, ip, port = (int(i) if '.' not in i else i for i in line.split())
-                servers[id] = ip, port
+                id, ip, port = line.split()
+                servers[id] = ip, int(port)
 
             for i in range(0, num_neighbors):
                 line = f.readline()
-                self.myid, neighbor, cost = (int(i) for i in line.split())
-                neighbors[neighbor] = cost
+                self.myid, neighbor, cost = line.split()
+                neighbors[neighbor] = int(cost)
 
         me = servers[self.myid]
 
         dzip = lambda k, v: dict(zip(k, v))
-        initiate_table = lambda: dzip(range(1, num_servers+1), [math.inf]*(num_servers+1))
+        initiate_table = lambda: dzip([str(i) for i in range(1, num_servers+1)], [math.inf]*(num_servers+1))
 
         PeerServer(*me)
 
-        self.node_table = {id: initiate_table() for id in range(1, num_servers+1)}
-        self.neighbors = {id: Peer(addrs=servers[id]) for id in neighbors.keys()}
+        self.node_table = {str(id): initiate_table() for id in range(1, num_servers+1)}
+        self.neighbors = {str(id): Peer(addrs=servers[id]) for id in neighbors.keys()}
+
+        print(f'{self.node_table=}')
+        print(f'{self.neighbors=}')
 
         # Establish links and create a neighbor connection table {'<id>': <sock object>...}
         # Create a node table with link costs

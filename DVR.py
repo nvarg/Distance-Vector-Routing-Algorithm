@@ -10,6 +10,7 @@ class DVR():
 
     def __init__(self):
         self.server_running = False
+        self.myid = None
         self.neighbors = None
         self.node_table = None
 
@@ -36,10 +37,10 @@ class DVR():
 
             for i in range(0, num_neighbors):
                 line = f.readline()
-                myid, neighbor, cost = (int(i) for i in line.split())
+                self.myid, neighbor, cost = (int(i) for i in line.split())
                 neighbors[neighbor] = cost
 
-        me = servers[myid]
+        me = servers[self.myid]
 
         dzip = lambda k, v: dict(zip(k, v))
         initiate_table = lambda: dzip(range(1, num_servers+1), [math.inf]*(num_servers+1))
@@ -75,12 +76,14 @@ class DVR():
 
     def disable(self, server):
         '''Closes the connection with the given server id'''
-        if server not in self.neighbors:
+        server = int(server)
+        print(f'{self.neighbors.keys()=}, {server} {type(server)}')
+        if server not in self.neighbors.keys():
             print(f'disable: server number {server} is not in neighbor list')
             return
         self.neighbors[server].sock.close()
         del self.neighbors[server];
-        self.node_table[myid][server] = math.inf
+        self.node_table[self.myid][server] = math.inf
         print('disable: SUCCESS')
 
     def crash(self):

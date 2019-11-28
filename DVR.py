@@ -79,7 +79,6 @@ class DVR():
 
     def disable(self, server):
         '''Closes the connection with the given server id'''
-        server = int(server)
         print(f'{self.neighbors.keys()=}, {server} {type(server)}')
         if server not in self.neighbors.keys():
             print(f'disable: server number {server} is not in neighbor list')

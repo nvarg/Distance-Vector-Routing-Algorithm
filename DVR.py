@@ -1,5 +1,4 @@
 import math
-from threading import Thread
 
 from InputController import InputController
 from TimedFunc import TimedFunc
@@ -9,10 +8,12 @@ from Peer import Peer
 class DVR():
 
     def __init__(self):
+
         self.server_running = False
         self.myid = None
-        self.neighbors = None
         self.node_table = None
+        self.node_hops = None
+        self.neighbors = None
 
         InputController(self)
 
@@ -21,6 +22,10 @@ class DVR():
 
     def server(self, _t, filename, _i, update_interval):
         '''Reads the topology file, initiates the node table, and starts the update & server thread'''
+        if self.server_running:
+            print('server: server was started, but it was already running.')
+            return
+
         self.server_running = True
 
         with open(filename, 'r') as f:
@@ -41,60 +46,95 @@ class DVR():
                 neighbors[neighbor] = int(cost)
 
         me = servers[self.myid]
-
-        dzip = lambda k, v: dict(zip(k, v))
-        initiate_table = lambda: dzip([str(i) for i in range(1, num_servers+1)], [math.inf]*(num_servers+1))
-
         PeerServer(*me)
 
-        self.node_table = {str(id): initiate_table() for id in range(1, num_servers+1)}
+        dzip = lambda k, v: dict(zip(k, v))
+        initiate_table = lambda v: dzip([str(i) for i in range(1, num_servers+1)], [v]*(num_servers+1))
+
+        self.node_table = {str(id): initiate_table(math.inf) for id in range(1, num_servers+1)}
+        self.node_hops = {str(id): initiate_table(None) for id in range(1, num_servers+1)}
+
+        print('connecting to neighbors')
         self.neighbors = {str(id): Peer(addrs=servers[id]) for id in neighbors.keys()}
 
-        print(f'{self.node_table=}')
-        print(f'{self.neighbors=}')
+        for idx, c in enumerate(neighbors):
+            self.node_table[self.myid][str(idx)] = c
+            self.node_hops[self.myid][str(idx)] = self.myid
 
-        # Establish links and create a neighbor connection table {'<id>': <sock object>...}
-        # Create a node table with link costs
+        Peer.state = self
+
         TimedFunc(self.step, float(update_interval))
+        print('server: success')
 
     def update(self, server1, server2, cost):
+
+        if not self.server_running:
+            print('update: server is not running')
+            return
+
         if cost == 'inf':
             cost = math.inf
+
         pass
 
     def step(self):
-        # update node table here
+        '''update node table here'''
+
+        if not self.server_running:
+            print('step: server is not running')
+            return
+
         pass
 
     def packets(self):
         '''Display the number of distance vector (packets) this  server
         has  received  since  the  last  invocation of this information'''
+
+        if not self.server_running:
+            print('packets: server is not running')
+            return
+
         pass
 
     def display(self):
         '''Display the current routing table formatted as a sequence
         of lines, with each line indicating: <source-server-ID> <next-hop-server-ID> <cost-of-path>'''
 
+        if not self.server_running:
+            print('display: server is not running')
+            return
+
         pass
 
     def disable(self, server):
         '''Closes the connection with the given server id'''
-        print(f'{self.neighbors.keys()=}, {server} {type(server)}')
+
+        if not self.server_running:
+            print('disable: server is not running')
+            return
+
         if server not in self.neighbors.keys():
             print(f'disable: server number {server} is not in neighbor list')
             return
+
         self.neighbors[server].sock.close()
         del self.neighbors[server];
+
         self.node_table[self.myid][server] = math.inf
-        print('disable: SUCCESS')
+        self.node_hops[self.myid][server] = None
+
+        print('disable: success')
 
     def crash(self):
         '''Closes all server connections. The neighboring servers must
         handle this close correctly and set the link cost to infinity.'''
+
         for id, p in self.neighbors.items():
             disable(self, id)
-        print('Crash: SUCCESS')
+
+        print('crash: success')
 
 
 if __name__ == "__main__":
     DVR()
+

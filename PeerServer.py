@@ -10,7 +10,8 @@ class PeerServer():
         self.thread.start()
 
     def handle_incoming_connection(self, host, port):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        # SOCK_DGRAM corresponds to a UDP socket
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         #    sock.setblocking(False)
             sock.bind((host, port))

@@ -4,12 +4,15 @@ import sys
 
 class Peer():
 
+    state = None
+
     def __init__(self, sock=None, addrs=None):
         assert not ((sock is not None) and (addrs is not None))
         assert not ((sock is None) and (addrs is None))
 
         if sock is None:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # SOCK_DGRAM corresponds to a UDP socket
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.connect(addrs)
         else:
             self.sock = sock
@@ -28,3 +31,4 @@ class Peer():
             print(f'{packet=}')
 
         sys.exit()
+

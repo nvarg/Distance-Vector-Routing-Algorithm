@@ -1,18 +1,20 @@
 import math
+import json
 
 from InputController import InputController
 from TimedFunc import TimedFunc
 from PeerServer import PeerServer
-from Peer import Peer
 
 class DVR():
 
     def __init__(self):
 
         self.server_running = False
+        self.socket = None
+        self.packets = 0
         self.myid = None
         self.node_table = None
-        self.node_hops = None
+        self.servers = None
         self.neighbors = None
 
         InputController(self)
@@ -22,11 +24,10 @@ class DVR():
 
     def server(self, _t, filename, _i, update_interval):
         '''Reads the topology file, initiates the node table, and starts the update & server thread'''
+
         if self.server_running:
             print('server: server was started, but it was already running.')
             return
-
-        self.server_running = True
 
         with open(filename, 'r') as f:
             num_servers = int(f.readline())
@@ -42,28 +43,28 @@ class DVR():
 
             for i in range(0, num_neighbors):
                 line = f.readline()
-                self.myid, neighbor, cost = line.split()
+                myid, neighbor, cost = line.split()
                 neighbors[neighbor] = int(cost)
 
-        me = servers[self.myid]
-        PeerServer(*me)
+        me = servers[myid]
+        sock = PeerServer(*me, self).socket
 
         dzip = lambda k, v: dict(zip(k, v))
         initiate_table = lambda v: dzip([str(i) for i in range(1, num_servers+1)], [v]*(num_servers+1))
 
-        self.node_table = {str(id): initiate_table(math.inf) for id in range(1, num_servers+1)}
-        self.node_hops = {str(id): initiate_table(None) for id in range(1, num_servers+1)}
+        node_table = {str(id): initiate_table(math.inf) for id in range(1, num_servers+1)}
 
-        print('connecting to neighbors')
-        self.neighbors = {str(id): Peer(addrs=servers[id]) for id in neighbors.keys()}
+        node_table[myid][myid] = 0
+        for to, c in neighbors.items():
+            node_table[myid][to] = c
 
-        for idx, c in enumerate(neighbors):
-            self.node_table[self.myid][str(idx)] = c
-            self.node_hops[self.myid][str(idx)] = self.myid
-
-        Peer.state = self
-
+        self.myid = myid
+        self.node_table = node_table
+        self.servers = servers
+        self.neighbors = {k:v for k,v in servers.items() if k in neighbors}
+        self.socket = sock
         TimedFunc(self.step, float(update_interval))
+        self.server_running = True
         print('server: success')
 
     def update(self, server1, server2, cost):
@@ -84,7 +85,14 @@ class DVR():
             print('step: server is not running')
             return
 
-        pass
+        src = self.socket.getsockname()
+        node_vect = self.node_table[self.myid]
+        packet = json.dumps(node_vect).encode('utf-8')
+
+        for addrs in self.neighbors.values():
+            self.socket.sendto(packet, addrs)
+        print('step: success')
+
 
     def packets(self):
         '''Display the number of distance vector (packets) this  server
@@ -94,7 +102,9 @@ class DVR():
             print('packets: server is not running')
             return
 
-        pass
+        print(f'packets: {self.packets} packets received.')
+        self.packets = 0
+        print('packets: success')
 
     def display(self):
         '''Display the current routing table formatted as a sequence
@@ -104,7 +114,8 @@ class DVR():
             print('display: server is not running')
             return
 
-        pass
+        for row in self.node_table.values():
+            print(*row.values())
 
     def disable(self, server):
         '''Closes the connection with the given server id'''
@@ -113,15 +124,12 @@ class DVR():
             print('disable: server is not running')
             return
 
-        if server not in self.neighbors.keys():
-            print(f'disable: server number {server} is not in neighbor list')
+        if server not in self.neighbors:
+            print(f'disable: server {server} is not in neighbor list')
             return
 
-        self.neighbors[server].sock.close()
         del self.neighbors[server];
-
         self.node_table[self.myid][server] = math.inf
-        self.node_hops[self.myid][server] = None
 
         print('disable: success')
 
@@ -129,8 +137,8 @@ class DVR():
         '''Closes all server connections. The neighboring servers must
         handle this close correctly and set the link cost to infinity.'''
 
-        for id, p in self.neighbors.items():
-            disable(self, id)
+        for id in self.neighbors.copy():
+            self.disable(id)
 
         print('crash: success')
 

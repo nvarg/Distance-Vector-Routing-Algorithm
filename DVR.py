@@ -18,7 +18,7 @@ class DVR():
         self.servers = None
         self.neighbors = None
         self.neighbor_timers = None
-        self.updated = None
+        self.updated = False
         self.interval = None
 
         InputController(self)

@@ -32,7 +32,7 @@ class PeerServer():
         while True:
             data, addr = sock.recvfrom(4096)
 
-            dvr.packets += 1
+            dvr.packet += 1
             jdata = json.loads(data.decode('utf-8'))
 
             vect = jdata['vect']
@@ -47,7 +47,7 @@ class PeerServer():
 
             dvr.node_table[src] = vect
 
-            if updated == dvr.myid:
+            if updated:
                 dvr.cost_table[src] = vect[me]
 
             for k in (k for k in dvr.servers if k != me):

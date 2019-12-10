@@ -11,7 +11,7 @@ class DVR():
 
         self.server_running = False
         self.socket = None
-        self.packets = 0
+        self.packet = 0
         self.myid = None
         self.node_table = None
         self.cost_table = None
@@ -92,7 +92,7 @@ class DVR():
             cost = math.inf
 
         self.cost_table[server2] = float(cost)
-        self.updated = self.myid
+        self.updated = True
         print('update: success')
 
     def step(self):
@@ -119,8 +119,8 @@ class DVR():
             print('packets: server is not running')
             return
 
-        print(f'packets: {self.packets} packets received.')
-        self.packets = 0
+        print(f'packets: {self.packet} packets received.')
+        self.packet = 0
         print('packets: success')
 
     def display(self):

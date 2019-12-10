@@ -47,7 +47,7 @@ class PeerServer():
 
             dvr.node_table[src] = vect
 
-            if updated:
+            if updated == dvr.myid:
                 dvr.cost_table[src] = vect[me]
 
             for k in (k for k in dvr.servers if k != me):

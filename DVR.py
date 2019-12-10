@@ -92,7 +92,7 @@ class DVR():
             cost = math.inf
 
         self.cost_table[server2] = float(cost)
-        self.updated = True
+        self.updated = self.myid
         print('update: success')
 
     def step(self):
@@ -107,9 +107,6 @@ class DVR():
 
         for addrs in self.neighbors.values():
             self.socket.sendto(packet, addrs)
-
-        if self.updated:
-            self.updated = self.myid
 
         print('step: success')
 

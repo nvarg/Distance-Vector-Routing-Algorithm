@@ -47,6 +47,8 @@ class PeerServer():
 
             dvr.node_table[src] = vect
 
+            print(updated)
+
             if updated:
                 dvr.cost_table[src] = vect[me]
 

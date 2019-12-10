@@ -70,7 +70,7 @@ class DVR():
         self.servers = servers
         self.neighbors = {k:v for k,v in servers.items() if k in neighbors}
         self.socket = sock
-        TimedFunc(self.step, float(update_interval))
+        #TimedFunc(self.step, float(update_interval))
         self.server_running = True
         print('server: success')
 

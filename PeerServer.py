@@ -1,4 +1,6 @@
 from threading import Thread
+from threading import Timer
+import math
 import socket
 import json
 
@@ -31,13 +33,25 @@ class PeerServer():
             data, addr = sock.recvfrom(4096)
 
             dvr.packets += 1
-            vect = json.loads(data.decode('utf-8'))
+            jdata = json.loads(data.decode('utf-8'))
+
+            vect = jdata['vect']
+            updated = jdata['updated']
             src = get_key(dvr.servers, addr)
 
+            timer = dvr.neighbor_timers[src]
+            timer.cancel()
+            timer = Timer(dvr.interval * 3, dvr.disable, src)
+            timer.start()
+            dvr.neighbor_timers[src] = timer;
 
-            for k,v in dvr.node_table[me]:
+            dvr.node_table[src] = vect
 
+            if dvr.myid == updated:
+                dvr.cost_table[src] = vect[me]
 
+            for k in (k for k in dvr.servers if k != me):
 
-
+                dvr.node_table[me][k] = min(math.inf,
+                        *(dvr.cost_table[i] + dvr.node_table[i][k] for i in dvr.neighbors))
 

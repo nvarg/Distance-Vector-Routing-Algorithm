@@ -1,9 +1,9 @@
 import math
 import json
-
 from InputController import InputController
 from TimedFunc import TimedFunc
 from PeerServer import PeerServer
+from threading import Timer
 
 class DVR():
 
@@ -14,8 +14,12 @@ class DVR():
         self.packets = 0
         self.myid = None
         self.node_table = None
+        self.cost_table = None
         self.servers = None
         self.neighbors = None
+        self.neighbor_timers = None
+        self.updated = None
+        self.interval = None
 
         InputController(self)
 
@@ -44,7 +48,7 @@ class DVR():
             for i in range(0, num_neighbors):
                 line = f.readline()
                 myid, neighbor, cost = line.split()
-                neighbors[neighbor] = int(cost)
+                neighbors[neighbor] = float(cost)
 
         me = servers[myid]
         sock = PeerServer(*me, self).socket
@@ -52,14 +56,17 @@ class DVR():
         dzip = lambda k, v: dict(zip(k, v))
         initiate_table = lambda v: dzip([str(i) for i in range(1, num_servers+1)], [v]*(num_servers+1))
 
-        node_table = {str(id): initiate_table(math.inf) for id in range(1, num_servers+1)}
+        node_table = {str(id): initiate_table(math.inf) for id in list(neighbors.keys()) + [myid]}
 
         node_table[myid][myid] = 0
         for to, c in neighbors.items():
             node_table[myid][to] = c
 
+        self.neighbor_timers = {k:Timer(math.inf, self.disable, k) for k in neighbors}
+        self.interval = float(update_interval)
         self.myid = myid
         self.node_table = node_table
+        self.cost_table = neighbors
         self.servers = servers
         self.neighbors = {k:v for k,v in servers.items() if k in neighbors}
         self.socket = sock
@@ -73,10 +80,20 @@ class DVR():
             print('update: server is not running')
             return
 
+        if server1 != self.myid:
+            print('update: cannot update the cost for a server that is not you')
+            return
+
+        if server2 not in self.neighbors:
+            print('update: cannot update the cost of a link you are not connected to')
+            return
+
         if cost == 'inf':
             cost = math.inf
 
-        pass
+        self.cost_table[server2] = float(cost)
+        self.updated = True
+        print('update: success')
 
     def step(self):
         '''update node table here'''
@@ -85,12 +102,15 @@ class DVR():
             print('step: server is not running')
             return
 
-        src = self.socket.getsockname()
-        node_vect = self.node_table[self.myid]
+        node_vect = {'vect':self.node_table[self.myid], 'updated': self.updated}
         packet = json.dumps(node_vect).encode('utf-8')
 
         for addrs in self.neighbors.values():
             self.socket.sendto(packet, addrs)
+
+        if self.updated:
+            self.updated = self.myid
+
         print('step: success')
 
 
@@ -114,8 +134,15 @@ class DVR():
             print('display: server is not running')
             return
 
-        for row in self.node_table.values():
-            print(*row.values())
+        print(' '.ljust(6) + 'to')
+        header = '|'.join(str(i).ljust(6) for i in ['from'] + list(self.servers.keys()))
+        print(header)
+        print(*(['-']*len(header)), sep='')
+        for k,d in self.node_table.items():
+            print('|'.join(str(i).ljust(6) for i in [str(k)] + list(d.values())))
+
+        print('display: success')
+
 
     def disable(self, server):
         '''Closes the connection with the given server id'''
@@ -129,6 +156,7 @@ class DVR():
             return
 
         del self.neighbors[server];
+        del self.cost_table[server];
         self.node_table[self.myid][server] = math.inf
 
         print('disable: success')
